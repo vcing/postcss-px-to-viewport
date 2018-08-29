@@ -12,7 +12,9 @@ var defaults = {
   fontViewportUnit: 'vw',  // vmin is more suitable.
   selectorBlackList: [],
   minPixelValue: 1,
-  mediaQuery: false
+  mediaQuery: false,
+  minWidth: false,
+  maxWidth: false
 };
 
 module.exports = postcss.plugin('postcss-px-to-viewport', function (options) {
@@ -29,7 +31,9 @@ module.exports = postcss.plugin('postcss-px-to-viewport', function (options) {
   var pxRegex = new RegExp('"[^"]+"|\'[^\']+\'|url\\([^\\)]+\\)|(\\d*\\.?\\d+)' + opts.unitToConvert, 'ig')
 
   return function (css) {
-
+    let cloned
+    if (opts.minWidth || opts.maxWidth) cloned = css.clone()
+    
     css.walkDecls(function (decl, i) {
       // This should be the fastest test and will remove most declarations
       if (decl.value.indexOf(opts.unitToConvert) === -1) return;
@@ -47,6 +51,9 @@ module.exports = postcss.plugin('postcss-px-to-viewport', function (options) {
         rule.params = rule.params.replace(pxRegex, pxReplace);
       });
     }
+    
+    const condition = opts.minWidth ? 'min-width' : opts.maxWidth ? 'max-width' : false;
+    if (condition && cloned) css.append({ name: 'media', params: `screen and (${condition}: ${opts.maxWidth || opts.minWidth}px){${cloned.toString()}}` })
 
   };
 });
